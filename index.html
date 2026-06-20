@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Flower Game</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0d1f0d;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;overflow:hidden;touch-action:none;}
+
+.screen{width:680px;max-width:100vw;display:none;}
+
+/* MENU */
+#screen-menu{flex-direction:column;align-items:center;justify-content:center;gap:0;height:460px;}
+.menu-title{font-size:40px;font-weight:700;color:#a8e6cf;letter-spacing:2px;margin-bottom:4px;text-shadow:0 0 24px #4caf5088;}
+.menu-sub{font-size:13px;color:#4a7a5a;margin-bottom:36px;}
+.menu-btn{width:220px;padding:14px 0;border-radius:10px;border:none;font-size:17px;font-weight:600;cursor:pointer;margin-bottom:14px;transition:transform 0.1s,filter 0.1s;}
+.menu-btn:active{transform:scale(0.97);}
+#btn-start{background:#4caf50;color:#fff;}
+#btn-start:hover{filter:brightness(1.15);}
+#btn-settings-open{background:#1e3d1e;color:#a8e6cf;border:1.5px solid #2e6e3e;}
+#btn-settings-open:hover{background:#254d25;}
+.preview-player{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:28px;border:3px solid #fff4;flex-shrink:0;}
+.preview-name{font-size:11px;color:#a8e6cf;text-align:center;margin-top:4px;margin-bottom:0;}
+
+/* SETTINGS */
+#screen-settings{flex-direction:column;align-items:center;justify-content:flex-start;padding:24px 20px;min-height:460px;background:#1a2e1a;border-radius:12px;gap:0;}
+.settings-title{font-size:22px;color:#a8e6cf;font-weight:600;margin-bottom:20px;}
+.setting-row{display:flex;align-items:center;gap:12px;margin-bottom:16px;width:400px;max-width:96vw;}
+.setting-label{font-size:13px;color:#aaa;width:110px;text-align:right;flex-shrink:0;}
+.color-options{display:flex;gap:7px;flex-wrap:wrap;}
+.color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:border-color 0.15s,transform 0.1s;}
+.color-swatch:hover{transform:scale(1.15);}
+.color-swatch.active{border-color:#fff;}
+.emoji-options{display:flex;gap:6px;flex-wrap:wrap;}
+.emoji-opt{font-size:20px;cursor:pointer;padding:3px 5px;border-radius:6px;border:2px solid transparent;transition:border-color 0.1s,transform 0.1s;}
+.emoji-opt:hover{transform:scale(1.2);}
+.emoji-opt.active{border-color:#a8e6cf;background:#ffffff18;}
+.name-input{background:#0d1f0d;border:1.5px solid #2e6e3e;border-radius:7px;padding:7px 12px;color:#a8e6cf;font-size:14px;width:200px;outline:none;}
+.name-input:focus{border-color:#4caf50;}
+.toggle-btn{width:48px;height:26px;border-radius:13px;border:none;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;}
+.toggle-btn.on{background:#4caf50;}
+.toggle-btn.off{background:#444;}
+.toggle-btn::after{content:'';position:absolute;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left 0.2s;}
+.toggle-btn.on::after{left:25px;}
+.toggle-btn.off::after{left:3px;}
+.settings-preview-wrap{display:flex;flex-direction:column;align-items:center;margin:8px 0 18px;}
+.preview-label{font-size:11px;color:#555;margin-bottom:6px;}
+.btn-back{background:#1e3d1e;color:#a8e6cf;border:1.5px solid #2e6e3e;padding:10px 40px;border-radius:8px;font-size:15px;cursor:pointer;margin-top:4px;}
+.btn-back:hover{background:#254d25;}
+
+/* GAME WRAPPER */
+#screen-game{flex-direction:column;background:#1a2e1a;border-radius:12px;overflow:hidden;position:relative;}
+#game-topbar{display:flex;gap:12px;align-items:center;padding:6px 12px;background:rgba(0,0,0,0.45);position:relative;}
+#btn-exit-game{background:#1e3d1e;color:#a8e6cf;border:1px solid #2e6e3e;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;white-space:nowrap;}
+#btn-exit-game:hover{background:#254d25;}
+.topbar-bars{display:flex;gap:10px;align-items:center;flex:1;}
+.lbl{font-size:11px;color:#aaa;}
+.bar-bg{width:90px;height:7px;background:#333;border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.15s;}
+#modetxt{font-size:11px;color:#ffd700;margin-left:auto;}
+#msg{font-size:11px;color:#a8e6cf;padding:3px 12px 4px;min-height:18px;background:rgba(0,0,0,0.3);}
+#gc{display:block;cursor:crosshair;outline:none;width:100%;max-width:680px;}
+
+/* WIN OVERLAY */
+#win-overlay{display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:20;border-radius:12px;}
+#win-overlay.show{display:flex;}
+.win-text{font-size:32px;color:#a8e6cf;font-weight:700;text-shadow:0 0 20px #4caf50aa;}
+.win-sub{font-size:15px;color:#6abf8a;}
+.btn-win-menu{background:#4caf50;color:#fff;border:none;border-radius:10px;padding:14px 48px;font-size:18px;font-weight:600;cursor:pointer;}
+.btn-win-menu:hover{filter:brightness(1.15);}
+
+/* TOUCH CONTROLS */
+#touch-controls{position:absolute;bottom:12px;left:0;width:100%;display:flex;justify-content:space-between;align-items:flex-end;padding:0 16px;pointer-events:none;z-index:10;}
+#joystick-wrap{pointer-events:all;position:relative;width:110px;height:110px;}
+#joystick-base{width:110px;height:110px;border-radius:55px;background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.18);position:absolute;top:0;left:0;}
+#joystick-knob{width:44px;height:44px;border-radius:22px;background:rgba(255,255,255,0.3);border:2px solid rgba(255,255,255,0.5);position:absolute;top:33px;left:33px;transition:none;}
+#action-btns{display:flex;flex-direction:column;gap:10px;pointer-events:all;align-items:flex-end;}
+.action-btn{width:58px;height:58px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);font-size:20px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;}
+#btn-attack{background:rgba(255,100,50,0.5);color:#fff;}
+#btn-skill{background:rgba(156,39,176,0.5);color:#fff;}
+</style>
+</head>
+<body>
+
+<!-- MENU -->
+<div class="screen" id="screen-menu">
+  <div style="display:flex;flex-direction:column;align-items:center;">
+    <div class="preview-player" id="menu-preview" style="background:#26c6da;">🧑</div>
+    <div class="preview-name" id="menu-preview-name"></div>
+  </div>
+  <div class="menu-title" style="margin-top:12px;">🌸 Flower Game</div>
+  <div class="menu-sub">WASD = เดิน &nbsp;|&nbsp; คลิกซ้าย = โจมตี &nbsp;|&nbsp; Z = สกิล</div>
+  <button class="menu-btn" id="btn-start">▶ เริ่มเกม</button>
+  <button class="menu-btn" id="btn-settings-open">⚙ ตั้งค่า</button>
+</div>
+
+<!-- SETTINGS -->
+<div class="screen" id="screen-settings">
+  <div class="settings-title">⚙ ตั้งค่าตัวละคร</div>
+
+  <div class="setting-row">
+    <span class="setting-label">ชื่อผู้เล่น</span>
+    <input class="name-input" id="name-input" maxlength="16" placeholder="ใส่ชื่อของคุณ">
+  </div>
+
+  <div class="setting-row">
+    <span class="setting-label">สีตัวละคร</span>
+    <div class="color-options" id="color-options">
+      <div class="color-swatch active" data-color="#26c6da" style="background:#26c6da;"></div>
+      <div class="color-swatch" data-color="#ef5350" style="background:#ef5350;"></div>
+      <div class="color-swatch" data-color="#ab47bc" style="background:#ab47bc;"></div>
+      <div class="color-swatch" data-color="#ffa726" style="background:#ffa726;"></div>
+      <div class="color-swatch" data-color="#66bb6a" style="background:#66bb6a;"></div>
+      <div class="color-swatch" data-color="#ec407a" style="background:#ec407a;"></div>
+      <div class="color-swatch" data-color="#fff176" style="background:#fff176;"></div>
+      <div class="color-swatch" data-color="#b0bec5" style="background:#b0bec5;"></div>
+    </div>
+  </div>
+
+  <div class="setting-row">
+    <span class="setting-label">อีโมจิ</span>
+    <div class="emoji-options" id="emoji-options">
+      <span class="emoji-opt active" data-emoji="🧑">🧑</span>
+      <span class="emoji-opt" data-emoji="🐱">🐱</span>
+      <span class="emoji-opt" data-emoji="🐸">🐸</span>
+      <span class="emoji-opt" data-emoji="🐼">🐼</span>
+      <span class="emoji-opt" data-emoji="🦊">🦊</span>
+      <span class="emoji-opt" data-emoji="🐺">🐺</span>
+      <span class="emoji-opt" data-emoji="🐧">🐧</span>
+      <span class="emoji-opt" data-emoji="🤖">🤖</span>
+      <span class="emoji-opt" data-emoji="💀">💀</span>
+      <span class="emoji-opt" data-emoji="⭐">⭐</span>
+      <span class="emoji-opt" data-emoji="🔥">🔥</span>
+      <span class="emoji-opt" data-emoji="👻">👻</span>
+    </div>
+  </div>
+
+  <div class="setting-row">
+    <span class="setting-label">ปุ่มควบคุม</span>
+    <button class="toggle-btn on" id="toggle-touch" aria-label="สลับปุ่มสัมผัส"></button>
+    <span style="font-size:12px;color:#6abf8a;" id="toggle-touch-label">เปิด (สำหรับมือถือ)</span>
+  </div>
+
+  <div class="settings-preview-wrap">
+    <div class="preview-label">ตัวอย่าง</div>
+    <div class="preview-player" id="settings-preview" style="background:#26c6da;">🧑</div>
+    <div class="preview-name" id="settings-preview-name" style="color:#a8e6cf;font-size:12px;margin-top:4px;"></div>
+  </div>
+
+  <button class="btn-back" id="btn-back">← กลับ</button>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="screen-game">
+  <div id="game-topbar">
+    <button id="btn-exit-game">← เมนู</button>
+    <div class="topbar-bars">
+      <span class="lbl">HP</span><div class="bar-bg"><div class="bar-fill" id="hpbar" style="width:100%;background:#4caf50;"></div></div>
+      <span class="lbl">สกิล</span><div class="bar-bg"><div class="bar-fill" id="skillbar" style="width:100%;background:#9c27b0;"></div></div>
+      <span id="modetxt">ปกติ</span>
+    </div>
+  </div>
+  <div id="msg">WASD/ลูกศร=เดิน | คลิกซ้าย=โจมตีประชิด | Z=สกิล</div>
+  <div style="position:relative;">
+    <canvas id="gc" width="680" height="390" tabindex="0"></canvas>
+    <!-- WIN OVERLAY -->
+    <div id="win-overlay">
+      <div class="win-text">🌸 ชนะแล้ว!</div>
+      <div class="win-sub">กำจัดศัตรูทั้งหมดแล้ว</div>
+      <button class="btn-win-menu" id="btn-win-menu">กลับหน้าเมนู</button>
+    </div>
+    <!-- TOUCH CONTROLS -->
+    <div id="touch-controls">
+      <div id="joystick-wrap">
+        <div id="joystick-base"></div>
+        <div id="joystick-knob"></div>
+      </div>
+      <div id="action-btns">
+        <button class="action-btn" id="btn-skill">Z</button>
+        <button class="action-btn" id="btn-attack">⚔</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- STATE ---
+let playerColor='#26c6da', playerEmoji='🧑', playerName='', showTouchControls=true;
+
+// --- SCREENS ---
+const sMenu=document.getElementById('screen-menu');
+const sSettings=document.getElementById('screen-settings');
+const sGame=document.getElementById('screen-game');
+
+function showMenu(){
+  sMenu.style.display='flex'; sSettings.style.display='none'; sGame.style.display='none';
+  updatePreviews();
+}
+function showSettings(){ sMenu.style.display='none'; sSettings.style.display='flex'; sGame.style.display='none'; }
+function showGame(){ sMenu.style.display='none'; sSettings.style.display='none'; sGame.style.display='flex'; initGame(); }
+
+function updatePreviews(){
+  const n=playerName||'';
+  document.getElementById('menu-preview').style.background=playerColor;
+  document.getElementById('menu-preview').textContent=playerEmoji;
+  document.getElementById('menu-preview-name').textContent=n;
+  document.getElementById('settings-preview').style.background=playerColor;
+  document.getElementById('settings-preview').textContent=playerEmoji;
+  document.getElementById('settings-preview-name').textContent=n;
+}
+
+document.getElementById('btn-start').onclick=showGame;
+document.getElementById('btn-settings-open').onclick=showSettings;
+document.getElementById('btn-back').onclick=showMenu;
+document.getElementById('btn-exit-game').onclick=()=>{ gameRunning=false; showMenu(); };
+document.getElementById('btn-win-menu').onclick=()=>{ gameRunning=false; document.getElementById('win-overlay').classList.remove('show'); showMenu(); };
+
+document.getElementById('color-options').addEventListener('click',e=>{
+  const sw=e.target.closest('.color-swatch'); if(!sw)return;
+  document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('active'));
+  sw.classList.add('active'); playerColor=sw.dataset.color; updatePreviews();
+});
+document.getElementById('emoji-options').addEventListener('click',e=>{
+  const em=e.target.closest('.emoji-opt'); if(!em)return;
+  document.querySelectorAll('.emoji-opt').forEach(s=>s.classList.remove('active'));
+  em.classList.add('active'); playerEmoji=em.dataset.emoji; updatePreviews();
+});
+document.getElementById('name-input').addEventListener('input',e=>{ playerName=e.target.value; updatePreviews(); });
+
+const toggleBtn=document.getElementById('toggle-touch');
+const toggleLabel=document.getElementById('toggle-touch-label');
+toggleBtn.onclick=()=>{
+  showTouchControls=!showTouchControls;
+  toggleBtn.classList.toggle('on',showTouchControls);
+  toggleBtn.classList.toggle('off',!showTouchControls);
+  toggleLabel.textContent=showTouchControls?'เปิด (สำหรับมือถือ)':'ปิด';
+};
+
+updatePreviews();
+showMenu();
+
+// --- GAME ---
+const canvas=document.getElementById('gc');
+const ctx=canvas.getContext('2d');
+const W=680,H=390;
+const keys={};
+let gameRunning=false;
+
+function onKD(e){
+  if(!gameRunning)return;
+  keys[e.key]=true;
+  const mv=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','a','A','s','S','d','D','w','W','z','Z'];
+  if(mv.includes(e.key))e.preventDefault();
+  if(e.key.toLowerCase()==='z')useSkill();
+}
+function onKU(e){ keys[e.key]=false; }
+function isKey(k){ return !!(keys[k]||keys[k.toLowerCase()]||keys[k.toUpperCase()]); }
+
+canvas.addEventListener('keydown',onKD); canvas.addEventListener('keyup',onKU);
+canvas.addEventListener('mousedown',e=>{ if(e.button===0&&gameRunning)onAttack(); });
+document.addEventListener('keydown',onKD); document.addEventListener('keyup',onKU);
+
+// touch action buttons
+document.getElementById('btn-attack').addEventListener('touchstart',e=>{ e.preventDefault(); onAttack(); },{passive:false});
+document.getElementById('btn-skill').addEventListener('touchstart',e=>{ e.preventDefault(); useSkill(); },{passive:false});
+
+// joystick
+const joystickWrap=document.getElementById('joystick-wrap');
+const joystickKnob=document.getElementById('joystick-knob');
+let joyActive=false, joyDx=0, joyDy=0, joyId=null;
+const JR=55, KR=22;
+
+joystickWrap.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const t=e.changedTouches[0]; joyId=t.identifier; joyActive=true;
+},{passive:false});
+document.addEventListener('touchmove',e=>{
+  if(!joyActive)return;
+  for(const t of e.changedTouches){
+    if(t.identifier!==joyId)continue;
+    const rect=joystickWrap.getBoundingClientRect();
+    let dx=t.clientX-(rect.left+JR), dy=t.clientY-(rect.top+JR);
+    const d=Math.hypot(dx,dy);
+    if(d>JR){dx=dx/d*JR;dy=dy/d*JR;}
+    joyDx=dx/JR; joyDy=dy/JR;
+    joystickKnob.style.left=(JR-KR+dx)+'px'; joystickKnob.style.top=(JR-KR+dy)+'px';
+  }
+},{passive:true});
+document.addEventListener('touchend',e=>{
+  for(const t of e.changedTouches){
+    if(t.identifier===joyId){ joyActive=false; joyDx=0; joyDy=0; joystickKnob.style.left=(JR-KR)+'px'; joystickKnob.style.top=(JR-KR)+'px'; }
+  }
+});
+
+let player,enemies,particles,flowerProjs,skillCd,skillMaxCd,gameMsg,gameMsgTimer,dashOutPending;
+const FLOWER_ORBIT=58;
+
+function initGame(){
+  gameRunning=true;
+  player={x:340,y:310,r:16,speed:2.8,hp:100,maxhp:100,dashing:false,dashVx:0,dashVy:0,dashTarget:null,dashTimer:0,attackCd:0,collectedFlowerEnemy:null};
+  enemies=[
+    {x:180,y:110,r:20,hp:100,maxhp:100,flowers:null,marked:false},
+    {x:500,y:110,r:20,hp:100,maxhp:100,flowers:null,marked:false},
+    {x:340,y:65, r:20,hp:100,maxhp:100,flowers:null,marked:false},
+  ];
+  particles=[];flowerProjs=[];skillCd=0;skillMaxCd=200;gameMsg='';gameMsgTimer=0;dashOutPending=false;
+  document.getElementById('win-overlay').classList.remove('show');
+  const tc=document.getElementById('touch-controls');
+  tc.style.display=showTouchControls?'flex':'none';
+  canvas.focus();
+  requestAnimationFrame(loop);
+}
+
+function setMsg(m,t=90){gameMsg=m;gameMsgTimer=t;}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+
+function spawnFlowersOnEnemy(e){
+  e.flowers=[];e.marked=true;
+  for(let i=0;i<3;i++){
+    const angle=(Math.PI*2/3)*i-Math.PI/2;
+    e.flowers.push({x:e.x+Math.cos(angle)*FLOWER_ORBIT,y:e.y+Math.sin(angle)*FLOWER_ORBIT,collected:false});
+  }
+}
+function spawnParticles(x,y,col,n=8){
+  for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=1.5+Math.random()*3;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,r:3+Math.random()*3,col,life:40,maxLife:40});}
+}
+
+function useSkill(){
+  if(!gameRunning)return;
+  if(skillCd>0){setMsg('สกิลยังรีชาร์จ ('+Math.ceil(skillCd/60)+'วิ)');return;}
+  const alive=enemies.filter(e=>e.hp>0);if(!alive.length)return;
+  const nearest=alive.reduce((a,b)=>dist(player,a)<dist(player,b)?a:b);
+  const ang=Math.atan2(nearest.y-player.y,nearest.x-player.x);
+  flowerProjs.push({x:player.x,y:player.y,vx:Math.cos(ang)*10,vy:Math.sin(ang)*10,target:nearest,life:120});
+  skillCd=skillMaxCd;setMsg('ปาดอกไม้ไปยังศัตรู!');
+}
+
+function onAttack(){
+  if(!gameRunning||player.dashing)return;
+  if(player.collectedFlowerEnemy&&player.collectedFlowerEnemy.hp>0){
+    const te=player.collectedFlowerEnemy;
+    const dx=te.x-player.x,dy=te.y-player.y,d=dist(player,te);
+    player.dashing=true;player.dashVx=(dx/d)*20;player.dashVy=(dy/d)*20;
+    player.dashTimer=0;player.dashTarget=te;dashOutPending=false;
+    player.collectedFlowerEnemy=null;setMsg('พุ่งเข้าหาศัตรู! กดเดินเพื่อพุ่งออก');return;
+  }
+  const alive=enemies.filter(e=>e.hp>0);
+  const near=alive.find(e=>dist(player,e)<player.r+e.r+28);
+  if(near&&player.attackCd<=0){near.hp=Math.max(0,near.hp-18);spawnParticles(near.x,near.y,'#ff5722',8);player.attackCd=25;setMsg('โจมตี! -18 HP');}
+  else if(!near)setMsg('ต้องเข้าใกล้ศัตรูก่อน');
+}
+
+function update(){
+  if(!gameRunning)return;
+  if(skillCd>0)skillCd--;if(gameMsgTimer>0)gameMsgTimer--;if(player.attackCd>0)player.attackCd--;
+
+  if(player.dashing){
+    player.x+=player.dashVx;player.y+=player.dashVy;player.dashTimer++;player.dashVx*=0.82;player.dashVy*=0.82;
+    if(player.dashTarget&&dist(player,player.dashTarget)<player.r+player.dashTarget.r+4){
+      player.dashTarget.hp=Math.max(0,player.dashTarget.hp-28);
+      spawnParticles(player.dashTarget.x,player.dashTarget.y,'#ff4081',12);
+      setMsg('โจมตีประชิด! -28 HP | กดเดินเพื่อพุ่งออก');
+      player.dashTarget=null;dashOutPending=true;player.dashVx*=0.05;player.dashVy*=0.05;
+    }
+    if(dashOutPending){
+      let ox=joyDx,oy=joyDy;
+      if(isKey('ArrowLeft')||isKey('a'))ox=-1;if(isKey('ArrowRight')||isKey('d'))ox=1;
+      if(isKey('ArrowUp')||isKey('w'))oy=-1;if(isKey('ArrowDown')||isKey('s'))oy=1;
+      if(Math.hypot(ox,oy)>0.2){const d=Math.hypot(ox,oy);player.dashVx=(ox/d)*18;player.dashVy=(oy/d)*18;dashOutPending=false;player.dashTimer=0;player.dashTarget=null;setMsg('พุ่งออก!');}
+    }
+    if(Math.hypot(player.dashVx,player.dashVy)<0.8&&!dashOutPending)player.dashing=false;
+    player.x=Math.max(player.r,Math.min(W-player.r,player.x));player.y=Math.max(player.r,Math.min(H-player.r,player.y));
+  } else {
+    dashOutPending=false;
+    let mx=joyDx,my=joyDy;
+    if(isKey('ArrowLeft')||isKey('a'))mx-=1;if(isKey('ArrowRight')||isKey('d'))mx+=1;
+    if(isKey('ArrowUp')||isKey('w'))my-=1;if(isKey('ArrowDown')||isKey('s'))my+=1;
+    const spd=Math.hypot(mx,my);
+    if(spd>0.05){player.x+=mx/spd*player.speed;player.y+=my/spd*player.speed;}
+    player.x=Math.max(player.r,Math.min(W-player.r,player.x));player.y=Math.max(player.r,Math.min(H-player.r,player.y));
+  }
+
+  flowerProjs=flowerProjs.filter(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.life--;if(p.life<=0)return false;
+    if(p.target&&p.target.hp>0&&dist(p,p.target)<p.target.r+10){
+      if(!p.target.marked){spawnFlowersOnEnemy(p.target);setMsg('ดอกไม้ล้อม! เดินไปเก็บแล้วคลิก');}
+      spawnParticles(p.target.x,p.target.y,'#ff69b4',6);return false;
+    }
+    return true;
+  });
+  enemies.forEach(e=>{
+    if(!e.marked||!e.flowers||e.hp<=0)return;
+    e.flowers.forEach(f=>{
+      if(f.collected)return;
+      if(dist(player,f)<player.r+12){f.collected=true;spawnParticles(f.x,f.y,'#ff69b4',8);player.collectedFlowerEnemy=e;setMsg('เก็บดอกไม้! คลิก/ปุ่ม⚔เพื่อพุ่ง');}
+    });
+    if(e.flowers.every(f=>f.collected)){e.marked=false;e.flowers=null;}
+  });
+  particles=particles.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;return p.life>0;});
+
+  document.getElementById('hpbar').style.width=(player.hp/player.maxhp*100)+'%';
+  document.getElementById('skillbar').style.width=(Math.max(0,(skillMaxCd-skillCd)/skillMaxCd)*100)+'%';
+  const hasColl=player.collectedFlowerEnemy&&player.collectedFlowerEnemy.hp>0;
+  document.getElementById('modetxt').textContent=hasColl?'🌸 พุ่ง':'ปกติ';
+  document.getElementById('modetxt').style.color=hasColl?'#ff69b4':'#ffd700';
+
+  if(enemies.every(e=>e.hp<=0)&&gameRunning){
+    gameRunning=false;
+    setTimeout(()=>document.getElementById('win-overlay').classList.add('show'),400);
+  }
+}
+
+function drawFlower(x,y,col,size){
+  for(let i=0;i<5;i++){const a=(Math.PI*2/5)*i;ctx.beginPath();ctx.arc(x+Math.cos(a)*size*.7,y+Math.sin(a)*size*.7,size*.55,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();}
+  ctx.beginPath();ctx.arc(x,y,size*.4,0,Math.PI*2);ctx.fillStyle='#fff176';ctx.fill();
+}
+
+function draw(){
+  ctx.fillStyle='#1a2e1a';ctx.fillRect(0,0,W,H);
+  for(let i=0;i<7;i++)for(let j=0;j<5;j++){ctx.beginPath();ctx.arc(50+i*100,40+j*80,2,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fill();}
+
+  flowerProjs.forEach(p=>{ctx.save();ctx.shadowColor='#ff69b4';ctx.shadowBlur=8;drawFlower(p.x,p.y,'#ff4081',7);ctx.restore();});
+
+  enemies.forEach(e=>{
+    if(e.hp<=0){ctx.font='22px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('💀',e.x,e.y);return;}
+    ctx.save();if(e.marked){ctx.shadowColor='#ff69b4';ctx.shadowBlur=16;}
+    ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fillStyle=e.marked?'#e91e63':'#c62828';ctx.fill();ctx.strokeStyle='#ffcdd2';ctx.lineWidth=2;ctx.stroke();ctx.restore();
+    ctx.font='14px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('👾',e.x,e.y);
+    const bw=44,bx=e.x-bw/2,by=e.y-e.r-14;ctx.fillStyle='#333';ctx.fillRect(bx,by,bw,6);ctx.fillStyle='#e53935';ctx.fillRect(bx,by,bw*(e.hp/e.maxhp),6);
+    if(e.marked&&e.flowers){
+      const pts=e.flowers.filter(f=>!f.collected);
+      if(pts.length===3){ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);ctx.lineTo(pts[1].x,pts[1].y);ctx.lineTo(pts[2].x,pts[2].y);ctx.closePath();ctx.strokeStyle='rgba(255,105,180,0.35)';ctx.lineWidth=1.5;ctx.stroke();}
+      e.flowers.forEach(f=>{if(f.collected)return;ctx.save();ctx.shadowColor='#ff69b4';ctx.shadowBlur=10;drawFlower(f.x,f.y,'#ff80ab',10);ctx.restore();});
+    }
+  });
+
+  particles.forEach(p=>{ctx.globalAlpha=p.life/p.maxLife;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.col;ctx.fill();ctx.globalAlpha=1;});
+
+  // player
+  ctx.save();
+  if(player.dashing){ctx.shadowColor='#80deea';ctx.shadowBlur=18;}
+  ctx.beginPath();ctx.arc(player.x,player.y,player.r,0,Math.PI*2);
+  ctx.fillStyle=playerColor;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();ctx.restore();
+  ctx.font='13px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(playerEmoji,player.x,player.y);
+
+  // player name above head
+  if(playerName){
+    ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+    ctx.fillStyle='rgba(0,0,0,0.5)';
+    const nw=ctx.measureText(playerName).width;
+    ctx.fillRect(player.x-nw/2-3,player.y-player.r-26,nw+6,14);
+    ctx.fillStyle='#ffffff';ctx.fillText(playerName,player.x,player.y-player.r-13);
+  }
+
+  // hp bar
+  const bw=38,bx=player.x-bw/2,by=player.y-player.r-(playerName?42:16);
+  ctx.fillStyle='#333';ctx.fillRect(bx,by,bw,5);ctx.fillStyle='#4caf50';ctx.fillRect(bx,by,bw*(player.hp/player.maxhp),5);
+
+  // dash / attack hints
+  const hasColl=player.collectedFlowerEnemy&&player.collectedFlowerEnemy.hp>0;
+  if(hasColl){ctx.save();ctx.setLineDash([5,5]);ctx.strokeStyle='rgba(255,105,180,0.8)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(player.x,player.y,player.r+10,0,Math.PI*2);ctx.stroke();ctx.restore();ctx.fillStyle='#ff69b4';ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.fillText('⚔ พุ่ง!',player.x,player.y-player.r-54);}
+  const attackRange=player.r+28;
+  const nearEnemy=enemies.find(e=>e.hp>0&&dist(player,e)<attackRange);
+  if(nearEnemy&&!hasColl&&!player.dashing){ctx.save();ctx.strokeStyle='rgba(255,200,0,0.4)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(player.x,player.y,attackRange,0,Math.PI*2);ctx.stroke();ctx.restore();}
+
+  document.getElementById('msg').textContent=gameMsgTimer>0?gameMsg:'WASD/ลูกศร=เดิน | คลิก/⚔=โจมตี | Z=สกิล';
+}
+
+function loop(){
+  if(!gameRunning)return;
+  update();draw();requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
